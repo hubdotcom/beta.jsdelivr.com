@@ -51,8 +51,27 @@ angular.module('app.search', [])
           new SearchResponse(scope, response)
     new Library()
 
-  .controller 'DetailCtrl', ($scope, $stateParams, Library) ->
-    $scope.copy_as = 'url'
+  .service 'Collection', ($localForage, $rootScope) ->
+    $rootScope.collection ||= {}
+    $localForage.bind($rootScope, 'collection')
+
+    class Collection
+      add: (lib, file) ->
+        $rootScope.collection[lib.name] ||=
+          version: lib.selected_version
+          files: []
+
+        if $rootScope.collection[lib.name].version != lib.selected_version
+          throw "Version already in collection"
+
+        $rootScope.collection[lib.name].files.push file if $rootScope.collection[lib.name].files.indexOf(file) == -1
+
+    new Collection()
+
+  .controller 'DetailCtrl', ($scope, $stateParams, Library, Collection) ->
+    $scope.add_to_collection = (lib, file) ->
+      Collection.add(@lib, @file)
+
     Library.get($stateParams.name).then (res) ->
       res.selected_version = res.lastversion
       res.assets = _.indexBy(res.assets, 'version')

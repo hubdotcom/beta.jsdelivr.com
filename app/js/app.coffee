@@ -4,6 +4,7 @@ App = angular.module('app', [
   'ngSanitize'
   'ui.router'
   'ui.bootstrap'
+  'LocalForageModule'
 
   # Internal
   'app.algolia'

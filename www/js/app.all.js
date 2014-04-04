@@ -1,7 +1,7 @@
 'use strict';
 var App;
 
-App = angular.module('app', ['ngSanitize', 'ui.router', 'ui.bootstrap', 'app.algolia', 'app.search', 'app.templates']);
+App = angular.module('app', ['ngSanitize', 'ui.router', 'ui.bootstrap', 'LocalForageModule', 'app.algolia', 'app.search', 'app.templates']);
 
 App.config(function($stateProvider, $urlRouterProvider, $locationProvider, $tooltipProvider) {
   $locationProvider.html5Mode(true);
@@ -64,7 +64,6 @@ App.config(function($stateProvider, $urlRouterProvider, $locationProvider, $tool
     }
   };
 });
-
 ;angular.module('app.algolia', []).service('AlgoliaClient', function() {
   return new AlgoliaSearch('DBMBXHNL8O', 'ff534b434664d2fb939eace2877ec4dc');
 }).factory('AlgoliaIndex', function(AlgoliaClient, $q) {
@@ -101,7 +100,6 @@ App.config(function($stateProvider, $urlRouterProvider, $locationProvider, $tool
 
   })();
 });
-
 ;angular.module('app.search', []).factory('SearchResponse', function() {
   var SearchResponse;
   return SearchResponse = (function() {
@@ -178,8 +176,35 @@ App.config(function($stateProvider, $urlRouterProvider, $locationProvider, $tool
 
   })();
   return new Library();
-}).controller('DetailCtrl', function($scope, $stateParams, Library) {
-  $scope.copy_as = 'url';
+}).service('Collection', function($localForage, $rootScope) {
+  var Collection;
+  $rootScope.collection || ($rootScope.collection = {});
+  $localForage.bind($rootScope, 'collection');
+  Collection = (function() {
+    function Collection() {}
+
+    Collection.prototype.add = function(lib, file) {
+      var _base, _name;
+      (_base = $rootScope.collection)[_name = lib.name] || (_base[_name] = {
+        version: lib.selected_version,
+        files: []
+      });
+      if ($rootScope.collection[lib.name].version !== lib.selected_version) {
+        throw "Version already in collection";
+      }
+      if ($rootScope.collection[lib.name].files.indexOf(file) === -1) {
+        return $rootScope.collection[lib.name].files.push(file);
+      }
+    };
+
+    return Collection;
+
+  })();
+  return new Collection();
+}).controller('DetailCtrl', function($scope, $stateParams, Library, Collection) {
+  $scope.add_to_collection = function(lib, file) {
+    return Collection.add(this.lib, this.file);
+  };
   Library.get($stateParams.name).then(function(res) {
     res.selected_version = res.lastversion;
     res.assets = _.indexBy(res.assets, 'version');
@@ -214,5 +239,5 @@ App.config(function($stateProvider, $urlRouterProvider, $locationProvider, $tool
     return Library.search($scope);
   };
 });
-
 ;
+//# sourceMappingURL=app.all.js.map
